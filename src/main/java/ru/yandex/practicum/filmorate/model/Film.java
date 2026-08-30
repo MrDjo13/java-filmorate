@@ -1,29 +1,53 @@
 package ru.yandex.practicum.filmorate.model;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Film {
     public static final int MAX_DESCRIPTION_LENGTH = 200;
+    public static final LocalDate CINEMA_BIRTH_DATE = LocalDate.of(1895, 12, 28);
 
-    private Long id;
+    Long id;
 
+    @NonNull
     @NotBlank(message = "Название фильма не может быть пустым")
-    private String name;
+    String name;
 
-    @Size(max = MAX_DESCRIPTION_LENGTH, message = "Максимальная длина описания — "
-            + MAX_DESCRIPTION_LENGTH + " символов")
-    private String description;
+    @NonNull
+    @Size(max = MAX_DESCRIPTION_LENGTH, message = "Максимальная длина описания — 200 символов")
+    String description;
 
-    @NotNull(message = "Дата релиза обязательна для заполнения")
-    private LocalDate releaseDate;
+    @NonNull
+    LocalDate releaseDate;
 
+    @NonNull
     @Positive(message = "Продолжительность фильма должна быть положительным числом")
-    private Integer duration;
+    Integer duration;
+
+    @Builder.Default
+    Set<Long> likes = new HashSet<>();
+
+    public Set<Long> getLikes() {
+        if (likes == null) {
+            likes = new HashSet<>();
+        }
+        return likes;
+    }
 }

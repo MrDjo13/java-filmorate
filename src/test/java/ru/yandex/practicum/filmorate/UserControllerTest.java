@@ -8,12 +8,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.controller.UserController;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 
 import java.time.LocalDate;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UserControllerTest {
@@ -24,27 +27,28 @@ class UserControllerTest {
 
     @BeforeEach
     void setUp() {
-        userController = new UserController();
+        InMemoryUserStorage userStorage = new InMemoryUserStorage();
+        UserService userService = new UserService(userStorage);
+        userController = new UserController(userService);
 
         try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
             validator = factory.getValidator();
         }
 
-        validUser = new User();
-        validUser.setEmail("test@example.com");
-        validUser.setLogin("usrname");
-        validUser.setName("John Doe");
-        validUser.setBirthday(LocalDate.of(1990, 1, 1));
+        validUser = User.builder()
+                .email("test@example.com")
+                .login("usrname")
+                .name("John Doe")
+                .birthday(LocalDate.of(1990, 1, 1))
+                .build();
     }
 
     @Test
     void shouldCreateValidUser() {
         Set<ConstraintViolation<User>> violations = validator.validate(validUser);
-
         assertTrue(violations.isEmpty());
 
         User created = userController.create(validUser);
-
         assertEquals(1, created.getId());
     }
 
@@ -53,7 +57,6 @@ class UserControllerTest {
         validUser.setName("");
 
         User created = userController.create(validUser);
-
         assertEquals("usrname", created.getName());
     }
 
@@ -62,7 +65,6 @@ class UserControllerTest {
         validUser.setName(null);
 
         User created = userController.create(validUser);
-
         assertEquals("usrname", created.getName());
     }
 
@@ -71,19 +73,13 @@ class UserControllerTest {
         validUser.setEmail("invalid-email");
 
         Set<ConstraintViolation<User>> violations = validator.validate(validUser);
-
         assertFalse(violations.isEmpty());
         assertEquals("email", violations.iterator().next().getPropertyPath().toString());
     }
 
     @Test
     void shouldFailValidationWhenEmailIsNull() {
-        validUser.setEmail(null);
-
-        Set<ConstraintViolation<User>> violations = validator.validate(validUser);
-
-        assertFalse(violations.isEmpty());
-        assertEquals("email", violations.iterator().next().getPropertyPath().toString());
+        assertThrows(NullPointerException.class, () -> validUser.setEmail(null));
     }
 
     @Test
@@ -91,19 +87,13 @@ class UserControllerTest {
         validUser.setLogin("usr name");
 
         Set<ConstraintViolation<User>> violations = validator.validate(validUser);
-
         assertFalse(violations.isEmpty());
         assertEquals("login", violations.iterator().next().getPropertyPath().toString());
     }
 
     @Test
     void shouldFailValidationWhenLoginIsNull() {
-        validUser.setLogin(null);
-
-        Set<ConstraintViolation<User>> violations = validator.validate(validUser);
-
-        assertFalse(violations.isEmpty());
-        assertEquals("login", violations.iterator().next().getPropertyPath().toString());
+        assertThrows(NullPointerException.class, () -> validUser.setLogin(null));
     }
 
     @Test
@@ -111,17 +101,12 @@ class UserControllerTest {
         validUser.setBirthday(LocalDate.now().plusDays(1));
 
         Set<ConstraintViolation<User>> violations = validator.validate(validUser);
-
         assertFalse(violations.isEmpty());
         assertEquals("birthday", violations.iterator().next().getPropertyPath().toString());
     }
 
     @Test
-    void shouldAllowNullBirthday() {
-        validUser.setBirthday(null);
-
-        Set<ConstraintViolation<User>> violations = validator.validate(validUser);
-
-        assertTrue(violations.isEmpty());
+    void shouldFailValidationWhenBirthdayIsNull() {
+        assertThrows(NullPointerException.class, () -> validUser.setBirthday(null));
     }
 }
