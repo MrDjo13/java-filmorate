@@ -1,0 +1,61 @@
+package ru.yandex.practicum.filmorate.controller;
+
+import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.User;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+@Slf4j
+@RestController
+@RequestMapping("/users")
+public class UserController {
+
+    private final Map<Long, User> users = new HashMap<>();
+    private long idCounter = 0;
+
+    @GetMapping
+    public Collection<User> findAll() {
+        return users.values();
+    }
+
+    @PostMapping
+    public User create(@Valid @RequestBody User user) {
+        checkAndSetUserName(user);
+        user.setId(generateId());
+        users.put(user.getId(), user);
+        log.info("Создан пользователь: id={}, login={}", user.getId(), user.getLogin());
+        return user;
+    }
+
+    @PutMapping
+    public User update(@Valid @RequestBody User user) {
+        if (user.getId() == null || !users.containsKey(user.getId())) {
+            log.error("Ошибка обновления: пользователь с id={} не найден", user.getId());
+            throw new NotFoundException("Пользователь с id=" + user.getId() + " не найден для обновления");
+        }
+        checkAndSetUserName(user);
+        users.put(user.getId(), user);
+        log.info("Обновлен пользователь: id={}, login={}", user.getId(), user.getLogin());
+        return user;
+    }
+
+    private void checkAndSetUserName(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
+    }
+
+    private long generateId() {
+        return ++idCounter;
+    }
+}
