@@ -22,86 +22,107 @@ class FilmControllerTest {
 
     private FilmController filmController;
     private Validator validator;
+    private Film film;
 
     @BeforeEach
     void setUp() {
         filmController = new FilmController();
+
         try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
             validator = factory.getValidator();
         }
-    }
 
-    @Test
-    void shouldCreateValidFilm() {
-        Film film = new Film();
+        film = new Film();
         film.setName("Inception");
         film.setDescription("Mind-bending thriller");
         film.setReleaseDate(LocalDate.of(2010, 7, 16));
         film.setDuration(148);
+    }
 
+    @Test
+    void shouldCreateValidFilm() {
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
         assertTrue(violations.isEmpty());
-
         Film created = filmController.create(film);
         assertEquals(1, created.getId());
     }
 
     @Test
     void shouldFailValidationWhenNameIsEmpty() {
-        Film film = new Film();
-        film.setName("   ");
-        film.setDescription("Description");
-        film.setReleaseDate(LocalDate.of(2010, 7, 16));
-        film.setDuration(120);
+        film.setName(" ");
 
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
         assertFalse(violations.isEmpty());
+        assertEquals("name", violations.iterator().next().getPropertyPath().toString());
     }
 
     @Test
     void shouldFailValidationWhenDescriptionIsTooLong() {
-        Film film = new Film();
-        film.setName("Film");
         film.setDescription("A".repeat(Film.MAX_DESCRIPTION_LENGTH + 1));
-        film.setReleaseDate(LocalDate.of(2010, 7, 16));
-        film.setDuration(120);
 
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
         assertFalse(violations.isEmpty());
+        assertEquals("description", violations.iterator().next().getPropertyPath().toString());
     }
 
     @Test
     void shouldFailValidationWhenReleaseDateIsBeforeCinemaBirth() {
-        Film film = new Film();
-        film.setName("Old Film");
-        film.setDescription("Description");
         film.setReleaseDate(LocalDate.of(1895, 12, 27));
-        film.setDuration(100);
 
-        assertThrows(ValidationException.class, () -> filmController.create(film));
+        assertThrows(
+                ValidationException.class,
+                () -> filmController.create(film)
+        );
     }
 
     @Test
     void shouldAllowReleaseDateOnCinemaBirth() {
-        Film film = new Film();
-        film.setName("First Film Ever");
-        film.setDescription("Description");
-        film.setReleaseDate(LocalDate.of(1895, 12, 28));
-        film.setDuration(100);
+        film.setReleaseDate(FilmController.CINEMA_BIRTH_DATE);
 
         Film created = filmController.create(film);
         assertEquals(1, created.getId());
     }
 
     @Test
-    void shouldFailValidationWhenDurationIsNegativeOrZero() {
-        Film film = new Film();
-        film.setName("Film");
-        film.setDescription("Description");
-        film.setReleaseDate(LocalDate.of(2010, 7, 16));
+    void shouldFailValidationWhenDurationIsNegative() {
         film.setDuration(-10);
 
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
         assertFalse(violations.isEmpty());
+        assertEquals("duration", violations.iterator().next().getPropertyPath().toString());
+    }
+
+    @Test
+    void shouldFailValidationWhenReleaseDateIsNull() {
+        film.setReleaseDate(null);
+
+        Set<ConstraintViolation<Film>> violations = validator.validate(film);
+        assertFalse(violations.isEmpty());
+        assertEquals("releaseDate", violations.iterator().next().getPropertyPath().toString());
+    }
+
+    @Test
+    void shouldAllowDescriptionToBeNull() {
+        film.setDescription(null);
+
+        Set<ConstraintViolation<Film>> violations = validator.validate(film);
+        assertTrue(violations.isEmpty());
+    }
+
+    @Test
+    void shouldAllowDurationToBeNull() {
+        film.setDuration(null);
+
+        Set<ConstraintViolation<Film>> violations = validator.validate(film);
+        assertTrue(violations.isEmpty());
+    }
+
+    @Test
+    void shouldFailValidationWhenNameIsNull() {
+        film.setName(null);
+
+        Set<ConstraintViolation<Film>> violations = validator.validate(film);
+        assertFalse(violations.isEmpty());
+        assertEquals("name", violations.iterator().next().getPropertyPath().toString());
     }
 }
