@@ -43,10 +43,4 @@ public class User {
     @Builder.Default
     Set<Long> friends = new HashSet<>();
 
-    public Set<Long> getFriends() {
-        if (friends == null) {
-            friends = new HashSet<>();
-        }
-        return friends;
-    }
 }

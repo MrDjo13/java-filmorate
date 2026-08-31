@@ -84,7 +84,7 @@ class FilmControllerTest {
 
     @Test
     void shouldAllowReleaseDateOnCinemaBirth() {
-        film.setReleaseDate(Film.CINEMA_BIRTH_DATE);
+        film.setReleaseDate(LocalDate.of(1895, 12, 28));
 
         Film created = filmController.create(film);
         assertEquals(1, created.getId());

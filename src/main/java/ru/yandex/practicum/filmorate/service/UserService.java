@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -19,10 +20,22 @@ public class UserService {
     private final UserStorage userStorage;
 
     public User create(User user) {
+        normalizeUserName(user);
         return userStorage.create(user);
     }
 
     public User update(User user) {
+        if (user.getId() == null) {
+            log.warn("Не указан ID пользователя для обновления");
+            throw new ValidationException("ID пользователя должен быть указан");
+        }
+        User oldUser = getById(user.getId());
+        normalizeUserName(user);
+
+        if (user.getFriends().isEmpty() && !oldUser.getFriends().isEmpty()) {
+            user.setFriends(oldUser.getFriends());
+        }
+
         return userStorage.update(user);
     }
 
@@ -41,6 +54,9 @@ public class UserService {
 
         user.getFriends().add(friendId);
         friend.getFriends().add(userId);
+
+        userStorage.update(user);
+        userStorage.update(friend);
         log.info("Пользователи ID {} и ID {} теперь друзья", userId, friendId);
     }
 
@@ -50,6 +66,9 @@ public class UserService {
 
         user.getFriends().remove(friendId);
         friend.getFriends().remove(userId);
+
+        userStorage.update(user);
+        userStorage.update(friend);
         log.info("Пользователи ID {} и ID {} удалены из друзей друг у друга", userId, friendId);
     }
 
@@ -73,5 +92,11 @@ public class UserService {
                 .map(userStorage::getById)
                 .flatMap(Optional::stream)
                 .toList();
+    }
+
+    private void normalizeUserName(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
     }
 }

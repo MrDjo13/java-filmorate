@@ -22,7 +22,6 @@ import java.util.Set;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Film {
     public static final int MAX_DESCRIPTION_LENGTH = 200;
-    public static final LocalDate CINEMA_BIRTH_DATE = LocalDate.of(1895, 12, 28);
 
     Long id;
 
@@ -31,7 +30,8 @@ public class Film {
     String name;
 
     @NonNull
-    @Size(max = MAX_DESCRIPTION_LENGTH, message = "Максимальная длина описания — 200 символов")
+    @Size(max = MAX_DESCRIPTION_LENGTH, message = "Максимальная длина описания — "
+            + MAX_DESCRIPTION_LENGTH + " символов")
     String description;
 
     @NonNull
@@ -44,10 +44,4 @@ public class Film {
     @Builder.Default
     Set<Long> likes = new HashSet<>();
 
-    public Set<Long> getLikes() {
-        if (likes == null) {
-            likes = new HashSet<>();
-        }
-        return likes;
-    }
 }
