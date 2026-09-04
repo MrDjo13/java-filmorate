@@ -4,24 +4,43 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Pattern;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class User {
-    private Long id;
+    Long id;
 
+    @NonNull
     @NotBlank(message = "Электронная почта не может быть пустой")
-    @Email(message = "Электронная почта должна быть корректной")
-    private String email;
+    @Email(message = "Электронная почта должна содержать символ @ и быть корректной")
+    String email;
 
+    @NonNull
     @NotBlank(message = "Логин не может быть пустым")
-    @Pattern(regexp = "^\\S+$", message = "Логин не может содержать пробелы")
-    private String login;
+    @Pattern(regexp = "^\\S+$", message = "Логин не должен содержать пробелы")
+    String login;
 
-    private String name;
+    String name;
 
+    @NonNull
     @PastOrPresent(message = "Дата рождения не может быть в будущем")
-    private LocalDate birthday;
+    LocalDate birthday;
+
+    @Builder.Default
+    Set<Long> friends = new HashSet<>();
+
 }

@@ -9,6 +9,9 @@ import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 
 import java.time.LocalDate;
 import java.util.Set;
@@ -26,17 +29,21 @@ class FilmControllerTest {
 
     @BeforeEach
     void setUp() {
-        filmController = new FilmController();
+        InMemoryFilmStorage filmStorage = new InMemoryFilmStorage();
+        InMemoryUserStorage userStorage = new InMemoryUserStorage();
+        FilmService filmService = new FilmService(filmStorage, userStorage);
+        filmController = new FilmController(filmService);
 
         try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
             validator = factory.getValidator();
         }
 
-        film = new Film();
-        film.setName("Inception");
-        film.setDescription("Mind-bending thriller");
-        film.setReleaseDate(LocalDate.of(2010, 7, 16));
-        film.setDuration(148);
+        film = Film.builder()
+                .name("Inception")
+                .description("Mind-bending thriller")
+                .releaseDate(LocalDate.of(2010, 7, 16))
+                .duration(148)
+                .build();
     }
 
     @Test
@@ -77,7 +84,7 @@ class FilmControllerTest {
 
     @Test
     void shouldAllowReleaseDateOnCinemaBirth() {
-        film.setReleaseDate(FilmController.CINEMA_BIRTH_DATE);
+        film.setReleaseDate(LocalDate.of(1895, 12, 28));
 
         Film created = filmController.create(film);
         assertEquals(1, created.getId());
@@ -94,35 +101,16 @@ class FilmControllerTest {
 
     @Test
     void shouldFailValidationWhenReleaseDateIsNull() {
-        film.setReleaseDate(null);
-
-        Set<ConstraintViolation<Film>> violations = validator.validate(film);
-        assertFalse(violations.isEmpty());
-        assertEquals("releaseDate", violations.iterator().next().getPropertyPath().toString());
-    }
-
-    @Test
-    void shouldAllowDescriptionToBeNull() {
-        film.setDescription(null);
-
-        Set<ConstraintViolation<Film>> violations = validator.validate(film);
-        assertTrue(violations.isEmpty());
-    }
-
-    @Test
-    void shouldAllowDurationToBeNull() {
-        film.setDuration(null);
-
-        Set<ConstraintViolation<Film>> violations = validator.validate(film);
-        assertTrue(violations.isEmpty());
+        assertThrows(NullPointerException.class, () -> film.setReleaseDate(null));
     }
 
     @Test
     void shouldFailValidationWhenNameIsNull() {
-        film.setName(null);
+        assertThrows(NullPointerException.class, () -> film.setName(null));
+    }
 
-        Set<ConstraintViolation<Film>> violations = validator.validate(film);
-        assertFalse(violations.isEmpty());
-        assertEquals("name", violations.iterator().next().getPropertyPath().toString());
+    @Test
+    void shouldFailValidationWhenDurationIsNull() {
+        assertThrows(NullPointerException.class, () -> film.setDuration(null));
     }
 }
